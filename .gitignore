@@ -1,0 +1,7 @@
+﻿youtube_env/
+.env
+credentials.json
+service-account*.json
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
