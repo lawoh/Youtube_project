@@ -10,6 +10,17 @@ load_dotenv()
 # Clé API lue depuis l'environnement (ne JAMAIS la mettre en dur dans le code).
 API_KEY = os.environ.get("YOUTUBE_API_KEY")
 
+# --- PostgreSQL ---
+# On réutilise les mêmes variables que docker-compose (POSTGRES_*),
+# pour qu'un seul .env configure à la fois la base et le code Python.
+# DB_HOST = localhost quand le code tourne sur ta machine (Postgres exposé par Docker).
+# Plus tard, depuis un conteneur Airflow, ce sera le nom du service : "postgres".
+DB_HOST = os.environ.get("DB_HOST", "localhost")
+DB_PORT = os.environ.get("DB_PORT", "5432")
+DB_NAME = os.environ.get("POSTGRES_DB", "youtube_db")
+DB_USER = os.environ.get("POSTGRES_USER", "youtube")
+DB_PASSWORD = os.environ.get("POSTGRES_PASSWORD", "")
+
 # Requêtes de découverte : (terme recherché, topic attribué).
 # Plusieurs termes peuvent pointer vers le même topic (FR + EN pour couvrir le monde).
 SEARCH_QUERIES = [

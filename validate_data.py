@@ -5,10 +5,14 @@ Sort en code 1 si des anomalies sont trouvées (utile en CI / Airflow).
 """
 import glob
 import json
+import logging
 import sys
 from pathlib import Path
 
+from logging_config import setup_logging
 from quality import run_all_checks
+
+logger = logging.getLogger(__name__)
 
 
 def _load_latest(pattern: str) -> list:
@@ -19,22 +23,23 @@ def _load_latest(pattern: str) -> list:
 
 
 def main() -> None:
+    setup_logging()
     dim_rows = _load_latest("dim_video_*.json")
     fact_rows = _load_latest("fact_stats_*.json")
     topic_rows = _load_latest("video_topic_*.json")
 
-    print(f"dim={len(dim_rows)}  fact={len(fact_rows)}  topic={len(topic_rows)}")
+    logger.info("dim=%d  fact=%d  topic=%d", len(dim_rows), len(fact_rows), len(topic_rows))
     errors = run_all_checks(dim_rows, fact_rows, topic_rows)
 
     if errors:
-        print(f"\n❌ {len(errors)} anomalie(s) détectée(s) :")
+        logger.error("%d anomalie(s) détectée(s) :", len(errors))
         for err in errors[:20]:
-            print(f"  - {err}")
+            logger.error("  - %s", err)
         if len(errors) > 20:
-            print(f"  ... et {len(errors) - 20} autres")
+            logger.error("  ... et %d autres", len(errors) - 20)
         sys.exit(1)
 
-    print("\n✅ Aucune anomalie. Données prêtes pour le chargement.")
+    logger.info("Aucune anomalie. Données prêtes pour le chargement.")
 
 
 if __name__ == "__main__":

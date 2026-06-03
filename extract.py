@@ -13,9 +13,10 @@ Plus tard, l'écriture JSON sera remplacée par un chargement dans PostgreSQL,
 et chaque fonction deviendra une tâche Airflow.
 """
 import json
-from datetime import date, datetime, timezone
+import logging
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Set
 
 from config import (
     MAX_RESULTS_PER_QUERY,
@@ -24,9 +25,11 @@ from config import (
     RELEVANCE_LANGUAGE,
     SEARCH_QUERIES,
 )
-from parsers import iso8601_duration_to_seconds, to_int
+from logging_config import setup_logging
+from transform import build_records
 from youtube_client import fetch_video_details, get_client, search_videos
 
+logger = logging.getLogger(__name__)
 OUTPUT_DIR = Path("data")
 
 
@@ -50,81 +53,36 @@ def discover_video_ids(youtube) -> Dict[str, Set[str]]:
                 published_before=published_before,
             )
             window_label = "avant-2022" if published_before else "après-2022"
-            print(f"[search] '{query}' ({topic}, {window_label}) -> {len(ids)} vidéos")
+            logger.info("[search] '%s' (%s, %s) -> %d vidéos", query, topic, window_label, len(ids))
             for video_id in ids:
                 video_topics.setdefault(video_id, set()).add(topic)
 
     return video_topics
 
 
-def build_records(
-    items: List[dict], video_topics: Dict[str, Set[str]]
-) -> Tuple[List[dict], List[dict], List[dict]]:
-    """Transforme les ressources videos.list en lignes dim / fact / liaison."""
-    snapshot_day = date.today().isoformat()
-    dim_rows, fact_rows, topic_rows = [], [], []
-
-    for item in items:
-        video_id = item["id"]
-        snippet = item.get("snippet", {})
-        content = item.get("contentDetails", {})
-        stats = item.get("statistics", {})
-
-        dim_rows.append(
-            {
-                "video_id": video_id,
-                "title": snippet.get("title"),
-                "channel_id": snippet.get("channelId"),
-                "channel_title": snippet.get("channelTitle"),
-                "published_at": snippet.get("publishedAt"),
-                "category_id": snippet.get("categoryId"),
-                "duration_sec": iso8601_duration_to_seconds(content.get("duration")),
-                "definition": content.get("definition"),
-                "default_language": (
-                    snippet.get("defaultAudioLanguage")
-                    or snippet.get("defaultLanguage")
-                ),
-                "region": REGION_CODE,
-                "tags": snippet.get("tags", []),
-            }
-        )
-        fact_rows.append(
-            {
-                "video_id": video_id,
-                "snapshot_date": snapshot_day,
-                "view_count": to_int(stats.get("viewCount")),
-                "like_count": to_int(stats.get("likeCount")),
-                "comment_count": to_int(stats.get("commentCount")),
-            }
-        )
-        for topic in sorted(video_topics.get(video_id, [])):
-            topic_rows.append({"video_id": video_id, "topic": topic})
-
-    return dim_rows, fact_rows, topic_rows
-
-
 def _write_json(rows: List[dict], filename: str) -> None:
     OUTPUT_DIR.mkdir(exist_ok=True)
     path = OUTPUT_DIR / filename
     path.write_text(json.dumps(rows, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"  -> {len(rows)} lignes écrites dans {path}")
+    logger.info("%d lignes écrites dans %s", len(rows), path)
 
 
 def main() -> None:
+    setup_logging()
     youtube = get_client()
 
-    print("=== Flux découverte ===")
+    logger.info("=== Flux découverte ===")
     video_topics = discover_video_ids(youtube)
-    print(f"Total vidéos uniques découvertes : {len(video_topics)}\n")
+    logger.info("Total vidéos uniques découvertes : %d", len(video_topics))
 
-    print("=== Flux enrichissement + snapshot ===")
+    logger.info("=== Flux enrichissement + snapshot ===")
     items = fetch_video_details(youtube, list(video_topics.keys()))
-    print(f"Détails récupérés : {len(items)}\n")
+    logger.info("Détails récupérés : %d", len(items))
 
     dim_rows, fact_rows, topic_rows = build_records(items, video_topics)
 
     stamp = datetime.now(timezone.utc).strftime("%Y%m%d")
-    print("=== Écriture ===")
+    logger.info("=== Écriture ===")
     _write_json(dim_rows, f"dim_video_{stamp}.json")
     _write_json(fact_rows, f"fact_stats_{stamp}.json")
     _write_json(topic_rows, f"video_topic_{stamp}.json")
