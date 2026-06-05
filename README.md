@@ -114,8 +114,8 @@ Youtube_project/
 
 ```bash
 # 1. Cloner le dépôt
-git clone https://github.com/TON_USER/TON_REPO.git
-cd TON_REPO
+git clone https://github.com/lawoh/Youtube_project.git
+cd Youtube_project
 
 # 2. Environnement virtuel
 python -m venv youtube_env
@@ -135,7 +135,7 @@ YOUTUBE_API_KEY=ta_cle_api
 POSTGRES_USER=youtube
 POSTGRES_PASSWORD=ton_mot_de_passe
 POSTGRES_DB=youtube_db
-DB_HOST=localhost
+DB_HOST=localhost (ou l'adresse de ton serveur)
 DB_PORT=5433
 ```
 
@@ -212,4 +212,4 @@ métriques que l'API ne stocke pas.
 
 ## Auteur
 
-Projet personnel de data engineering — _(ADA AYA LAOUALI / INGENIEUR DATA SIG)_.
+Projet personnel de data engineering — ADA AYA LAOUALI / INGENIEUR DATA SIG.
