@@ -1,6 +1,6 @@
 # YouTube Data Pipeline — SIG, géomatique, IA & data
 
-![CI](https://github.com/TON_USER/TON_REPO/actions/workflows/ci.yml/badge.svg)
+![CI](https://github.com/lawoh/Youtube_project/actions/workflows/ci.yml/badge.svg)
 
 Pipeline de _data engineering_ qui collecte, historise et visualise des données
 de vidéos YouTube portant sur la **géomatique / SIG**, l'**intelligence artificielle**
