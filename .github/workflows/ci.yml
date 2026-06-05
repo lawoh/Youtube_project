@@ -1,0 +1,42 @@
+name: CI
+
+# Se déclenche à chaque push sur main et sur chaque pull request visant main
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  tests:
+    name: Tests pytest
+    runs-on: ubuntu-latest
+
+    # Variables factices : elles servent juste à ce que config.py s'importe
+    # sans erreur. Les tests n'utilisent ni l'API ni la base.
+    env:
+      YOUTUBE_API_KEY: dummy-key-for-ci
+      POSTGRES_USER: youtube
+      POSTGRES_PASSWORD: ci
+      POSTGRES_DB: youtube_db
+      DB_HOST: localhost
+      DB_PORT: "5432"
+
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Installer les dépendances
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest
+
+      - name: Lancer les tests
+        run: pytest -v
