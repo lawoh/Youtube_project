@@ -3,9 +3,9 @@ name: CI
 # Se déclenche à chaque push sur main et sur chaque pull request visant main
 on:
   push:
-    branches: [ main ]
+    branches: [master]
   pull_request:
-    branches: [ main ]
+    branches: [master]
 
 jobs:
   tests:
