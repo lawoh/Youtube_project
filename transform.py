@@ -11,6 +11,28 @@ from config import REGION_CODE
 from parsers import iso8601_duration_to_seconds, to_int
 
 
+def build_fact_rows(items: List[dict]) -> List[dict]:
+    """Construit UNIQUEMENT les lignes de métriques (pour le snapshot quotidien).
+
+    Pas besoin de dimension ni de topic ici : on relit des vidéos déjà connues
+    et on n'enregistre que leurs compteurs du jour.
+    """
+    snapshot_day = date.today().isoformat()
+    fact_rows = []
+    for item in items:
+        stats = item.get("statistics", {})
+        fact_rows.append(
+            {
+                "video_id": item["id"],
+                "snapshot_date": snapshot_day,
+                "view_count": to_int(stats.get("viewCount")),
+                "like_count": to_int(stats.get("likeCount")),
+                "comment_count": to_int(stats.get("commentCount")),
+            }
+        )
+    return fact_rows
+
+
 def build_records(
     items: List[dict], video_topics: Dict[str, Set[str]]
 ) -> Tuple[List[dict], List[dict], List[dict]]:

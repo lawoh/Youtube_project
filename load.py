@@ -43,6 +43,13 @@ def _load_latest(pattern: str) -> list:
     return json.loads(Path(files[-1]).read_text(encoding="utf-8"))
 
 
+def fetch_known_video_ids(conn) -> list:
+    """Renvoie tous les video_id déjà présents en base (pour le snapshot quotidien)."""
+    with conn.cursor() as cur:
+        cur.execute("SELECT video_id FROM dim_video;")
+        return [row[0] for row in cur.fetchall()]
+
+
 def upsert_dim(conn, dim_rows: list) -> None:
     """Insère ou met à jour la dimension. La clé est video_id."""
     sql = """
